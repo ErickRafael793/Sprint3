@@ -4,8 +4,8 @@ import { HttpClient } from "@/infrastructure/http/HttpClient";
 import { BrowserCartRepository } from "@/infrastructure/repository/BrowserCartRepository";
 import { BrowserSessionRepository } from "@/infrastructure/repository/BrowserSessionRepository";
 import { FakeStoreAuthRepository } from "@/infrastructure/repository/FakeStoreAuthRepository";
+import { FakeStoreProductRepository } from "@/infrastructure/repository/FakeStoreProductRepository";
 import { MockAuditRepository } from "@/infrastructure/repository/MockAuditRepository";
-import { MockProductRepository } from "@/infrastructure/repository/MockProductRepository";
 import { MockUserRepository } from "@/infrastructure/repository/MockUserRepository";
 
 const http = new HttpClient(APP_CONFIG.api.baseUrl);
@@ -19,7 +19,7 @@ export const dependencies = {
     cartRepository,
     () => navigator.onLine,
   ),
-  productRepository: new MockProductRepository(),
+  productRepository: new FakeStoreProductRepository(http),
   userRepository: new MockUserRepository(),
   auditRepository: new MockAuditRepository(),
   cartRepository,

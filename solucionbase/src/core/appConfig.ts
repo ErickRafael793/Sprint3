@@ -5,6 +5,10 @@ export const APP_CONFIG = {
     endpoints: {
       login: "/auth/login",
       users: "/users",
+      products: "/products",
+      productById: (id: number) => `/products/${id}`,
+      categories: "/products/categories",
+      productsByCategory: (category: string) => `/products/category/${encodeURIComponent(category)}`,
     },
   },
   routes: {

@@ -1,4 +1,4 @@
-import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/presentation/context/AuthContext";
 import { useProductDetailViewModel } from "@/presentation/viewmodel/useProductDetailViewModel";
@@ -8,12 +8,24 @@ export function ProductDetailView() {
   const { session } = useAuth();
   const navigate = useNavigate();
 
-  if (!vm.product) return <div className="loading">Cargando producto...</div>;
+  if (vm.notFound) {
+    return (
+      <div className="empty-state" role="alert">
+        <AlertTriangle />
+        <strong>Producto no disponible.</strong>
+        <span>Regresando al catálogo...</span>
+      </div>
+    );
+  }
+
+  if (vm.loading || !vm.product) {
+    return <div className="loading" role="status" aria-live="polite">Cargando producto...</div>;
+  }
 
   return (
     <section className="detail-page">
       <button className="back-button" onClick={() => navigate(-1)}><ArrowLeft /> Detalle del producto</button>
-      <img className="detail-image" src={vm.product.image} alt="" />
+      <img className="detail-image" src={vm.product.image} alt="" loading="lazy" decoding="async" />
       <span className="eyebrow">{vm.product.category}</span>
       <h1>{vm.product.title}</h1>
       <div className="rating">★ {vm.product.rating?.rate ?? 4.5} ({vm.product.rating?.count ?? 0} reseñas)</div>
