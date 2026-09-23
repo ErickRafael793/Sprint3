@@ -5,6 +5,7 @@ export const APP_CONFIG = {
     endpoints: {
       login: "/auth/login",
       users: "/users",
+      carts: "/carts",
     },
   },
   routes: {
