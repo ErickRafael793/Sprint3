@@ -1,4 +1,5 @@
-# Sprint3
+# Sprint3 :)
+
 
 Este repositorio ha sido inicializado para el proyecto Sprint3.
 
