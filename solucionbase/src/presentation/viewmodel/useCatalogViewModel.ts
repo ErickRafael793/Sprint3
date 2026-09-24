@@ -1,17 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDependencies } from "@/app/DependenciesProvider";
-import { AppError } from "@/core/AppError";
 import type { Product } from "@/domain/models";
 import { useAuth } from "@/presentation/context/AuthContext";
-
-const ALL_CATEGORIES_OPTION = "Todos";
 
 export function useCatalogViewModel() {
   const { productRepository } = useDependencies();
   const { session } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([ALL_CATEGORIES_OPTION]);
-  const [category, setCategory] = useState(ALL_CATEGORIES_OPTION);
+  const [category, setCategory] = useState("Todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,37 +30,14 @@ export function useCatalogViewModel() {
     };
   }, [productRepository]);
 
-  const loadProducts = useCallback(
-    (targetCategory: string) => {
-      setLoading(true);
-      setError("");
-      setProducts([]); // limpia el arreglo anterior para no mostrar datos obsoletos
-
-      const request = targetCategory === ALL_CATEGORIES_OPTION
-        ? productRepository.getAll()
-        : productRepository.getByCategory(targetCategory);
-
-      request
-        .then(setProducts)
-        .catch((caughtError) => {
-          setError(
-            caughtError instanceof AppError
-              ? caughtError.message
-              : "No se pudo cargar el catálogo. Intenta de nuevo.",
-          );
-        })
-        .finally(() => setLoading(false));
-    },
-    [productRepository],
+  const categories = useMemo(
+    () => ["Todos", ...new Set(products.map((product) => product.category))],
+    [products],
   );
 
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
-
-  useEffect(() => {
-    loadProducts(category);
-  }, [category, loadProducts]);
+  const visibleProducts = category === "Todos"
+    ? products
+    : products.filter((product) => product.category === category);
 
   return {
     categories,

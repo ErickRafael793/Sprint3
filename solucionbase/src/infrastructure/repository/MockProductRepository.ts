@@ -2,10 +2,6 @@ import type { Product, ProductInput } from "@/domain/models";
 import type { ProductRepository } from "@/domain/repository";
 import { MOCK_PRODUCTS, wait } from "@/mocks/mockData";
 
-/**
- * Implementación mock de ProductRepository, útil para desarrollo sin red
- * y como sustituto intercambiable de FakeStoreProductRepository (LSP).
- */
 export class MockProductRepository implements ProductRepository {
   async getAll(): Promise<Product[]> {
     await wait();

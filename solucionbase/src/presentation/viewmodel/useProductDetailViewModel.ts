@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useDependencies } from "@/app/DependenciesProvider";
-import { APP_CONFIG } from "@/core/appConfig";
 import type { Product } from "@/domain/models";
 import { useAuth } from "@/presentation/context/AuthContext";
-
-const NOT_FOUND_REDIRECT_DELAY_MS = 2000;
 
 export function useProductDetailViewModel() {
   const { productRepository, cartRepository } = useDependencies();
@@ -13,8 +10,6 @@ export function useProductDetailViewModel() {
   const { id } = useParams();
   const productId = Number(id);
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);

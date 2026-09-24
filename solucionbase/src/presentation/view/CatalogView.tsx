@@ -56,9 +56,7 @@ export function CatalogView() {
         </div>
       )}
 
-      {!vm.loading && !vm.error && vm.products.length === 0 && (
-        <div className="empty-state"><ShoppingBag /><strong>No hay productos</strong></div>
-      )}
+      {!vm.loading && vm.products.length === 0 && <div className="empty-state"><ShoppingBag /><strong>No hay productos</strong></div>}
     </section>
   );
 }
