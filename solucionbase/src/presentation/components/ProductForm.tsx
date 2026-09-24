@@ -19,7 +19,38 @@ const fields: Array<{
   label: string;
   type: "text" | "number" | "url";
   placeholder: string;
-}> = [
+}> = [  
+   {
+    key: "title",
+    label: "Título",
+    type: "text",
+    placeholder: "Nombre del producto",
+  },
+  {
+    key: "price",
+    label: "Precio",
+    type: "number",
+    placeholder: "0.00",
+  },
+  {
+    key: "description",
+    label: "Descripción",
+    type: "text",
+    placeholder: "Descripción del producto",
+  },
+  {
+    key: "category",
+    label: "Categoría",
+    type: "text",
+    placeholder: "Categoría",
+  },
+  {
+    key: "image",
+    label: "URL de imagen",
+    type: "url",
+    placeholder: "https://...",
+  },
+];
 
 export function ProductForm({
   value,
