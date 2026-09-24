@@ -111,3 +111,9 @@ El alias `@` representa la carpeta `src`, por lo que se evitan rutas como `../..
 ## Almacenamiento
 
 Esta versión web utiliza `localStorage` para demostrar persistencia y limpieza. En producción, el token debería manejarse con una cookie segura HttpOnly o con almacenamiento seguro nativo si el proyecto migra a React Native o Capacitor.
+
+
+## Historias implementadas — Épica 4
+
+- **US09** — Agregar productos al carrito, con validación de duplicados y restricción por rol (Yazmin Garfias)
+- **US10** — Administrar cantidades y eliminar productos del carrito, con recálculo de total (Yazmin Garfias)
