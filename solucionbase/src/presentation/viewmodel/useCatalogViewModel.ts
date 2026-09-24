@@ -2,27 +2,36 @@ import { useCallback, useEffect, useState } from "react";
 import { useDependencies } from "@/app/DependenciesProvider";
 import { AppError } from "@/core/AppError";
 import type { Product } from "@/domain/models";
+import { useAuth } from "@/presentation/context/AuthContext";
 
 const ALL_CATEGORIES_OPTION = "Todos";
 
 export function useCatalogViewModel() {
   const { productRepository } = useDependencies();
+  const { session } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([ALL_CATEGORIES_OPTION]);
   const [category, setCategory] = useState(ALL_CATEGORIES_OPTION);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadCategories = useCallback(() => {
+  useEffect(() => {
+    let active = true;
     productRepository
-      .getCategories()
-      .then((apiCategories) => setCategories([ALL_CATEGORIES_OPTION, ...apiCategories]))
+      .getAll()
+      .then((result) => {
+        if (active) setProducts(result);
+      })
       .catch(() => {
-        // Las categorías son un complemento del filtro; si la petición falla,
-        // el catálogo general (GET /products) sigue disponible con "Todos".
-        console.error("No fue posible obtener las categorías del catálogo.");
-        setCategories([ALL_CATEGORIES_OPTION]);
+        if (active) setError("No se pudo cargar el catálogo.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
+
+    return () => {
+      active = false;
+    };
   }, [productRepository]);
 
   const loadProducts = useCallback(
@@ -61,9 +70,9 @@ export function useCatalogViewModel() {
     categories,
     category,
     setCategory,
-    products,
+    products: visibleProducts,
     loading,
     error,
-    retry: () => loadProducts(category),
+    canCreateProduct: session?.role === "ADMIN",
   };
 }

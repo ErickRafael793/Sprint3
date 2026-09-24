@@ -2,8 +2,8 @@ import type { CartItem, Product } from "@/domain/models";
 
 export interface CartRepository {
   getItems(): CartItem[];
-  add(product: Product, quantity: number): void;
-  update(productId: number, quantity: number): void;
-  remove(productId: number): void;
+  add(product: Product, quantity: number): Promise<void>;
+  update(productId: number, quantity: number): Promise<void>;
+  remove(productId: number): Promise<void>;
   clear(): void;
 }

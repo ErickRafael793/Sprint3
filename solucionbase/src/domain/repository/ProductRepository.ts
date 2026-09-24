@@ -1,8 +1,9 @@
-import type { Product } from "@/domain/models";
+import type { Product, ProductInput } from "@/domain/models";
 
 export interface ProductRepository {
   getAll(): Promise<Product[]>;
   getById(id: number): Promise<Product | null>;
-  getCategories(): Promise<string[]>;
-  getByCategory(category: string): Promise<Product[]>;
+  create(input: ProductInput): Promise<Product>;
+  update(id: number, input: ProductInput): Promise<Product>;
+  delete(id: number): Promise<Product>;
 }

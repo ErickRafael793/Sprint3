@@ -3,14 +3,14 @@ import { APP_CONFIG } from "@/core/appConfig";
 import { HttpClient } from "@/infrastructure/http/HttpClient";
 import { BrowserCartRepository } from "@/infrastructure/repository/BrowserCartRepository";
 import { BrowserSessionRepository } from "@/infrastructure/repository/BrowserSessionRepository";
+import { FakeStoreAuditRepository } from "@/infrastructure/repository/FakeStoreAuditRepository";
 import { FakeStoreAuthRepository } from "@/infrastructure/repository/FakeStoreAuthRepository";
 import { FakeStoreProductRepository } from "@/infrastructure/repository/FakeStoreProductRepository";
-import { MockAuditRepository } from "@/infrastructure/repository/MockAuditRepository";
-import { MockUserRepository } from "@/infrastructure/repository/MockUserRepository";
+import { FakeStoreUserRepository } from "@/infrastructure/repository/FakeStoreUserRepository";
 
 const http = new HttpClient(APP_CONFIG.api.baseUrl);
 const sessionRepository = new BrowserSessionRepository();
-const cartRepository = new BrowserCartRepository();
+const cartRepository = new BrowserCartRepository(http);
 
 export const dependencies = {
   authService: new AuthService(
@@ -20,8 +20,8 @@ export const dependencies = {
     () => navigator.onLine,
   ),
   productRepository: new FakeStoreProductRepository(http),
-  userRepository: new MockUserRepository(),
-  auditRepository: new MockAuditRepository(),
+  userRepository: new FakeStoreUserRepository(http),
+  auditRepository: new FakeStoreAuditRepository(http),
   cartRepository,
 };
 

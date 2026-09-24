@@ -3,70 +3,81 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useDependencies } from "@/app/DependenciesProvider";
 import { APP_CONFIG } from "@/core/appConfig";
 import type { Product } from "@/domain/models";
+import { useAuth } from "@/presentation/context/AuthContext";
 
 const NOT_FOUND_REDIRECT_DELAY_MS = 2000;
 
 export function useProductDetailViewModel() {
   const { productRepository, cartRepository } = useDependencies();
+  const { session } = useAuth();
   const { id } = useParams();
-  const navigate = useNavigate();
+  const productId = Number(id);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const load = useCallback(() => {
-    const numericId = Number(id);
+  useEffect(() => {
+    let active = true;
 
-    if (!id || Number.isNaN(numericId)) {
+    if (!Number.isInteger(productId) || productId <= 0) {
+      setError("El identificador del producto no es válido.");
       setLoading(false);
-      setNotFound(true);
       return;
     }
 
     setLoading(true);
-    setNotFound(false);
-
+    setError("");
     productRepository
-      .getById(numericId)
+      .getById(productId)
       .then((result) => {
+        if (!active) return;
         if (!result) {
-          setNotFound(true);
+          setError("No se encontró el producto.");
+          setProduct(null);
           return;
         }
         setProduct(result);
       })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [id, productRepository]);
+      .catch(() => {
+        if (active) setError("No se pudo cargar el producto.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-  useEffect(() => {
-    load();
-  }, [load]);
+    return () => {
+      active = false;
+    };
+  }, [productId, productRepository]);
 
-  useEffect(() => {
-    if (!notFound) return;
-
-    const timeoutId = window.setTimeout(() => {
-      navigate(APP_CONFIG.routes.catalog, { replace: true });
-    }, NOT_FOUND_REDIRECT_DELAY_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [notFound, navigate]);
-
-  const addToCart = () => {
+  const addToCart = async () => {
     if (!product) return;
-    cartRepository.add(product, quantity);
-    setMessage("Producto agregado al carrito.");
+    setIsSaving(true);
+    setMessage("");
+    try {
+      await cartRepository.add(product, quantity);
+      setMessage("Producto agregado al carrito.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return {
     product,
-    loading,
-    notFound,
+    setProduct,
     quantity,
     message,
+    loading,
+    error,
+    isAdmin: session?.role === "ADMIN",
+    isClient: session?.role === "CLIENT",
+    isAuditor: session?.role === "AUDITOR",
+    isSaving,
     decrease: () => setQuantity((current) => Math.max(1, current - 1)),
     increase: () => setQuantity((current) => current + 1),
     addToCart,

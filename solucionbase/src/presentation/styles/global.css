@@ -123,3 +123,25 @@ h1, h2, h3, p { margin-top: 0; }
   .bottom-nav { bottom: 10px; max-width: calc(100% - 18px); overflow-x: auto; }
   .bottom-nav a { min-width: 64px; }
 }
+
+
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.compact-button { min-height: 42px; padding: 0 14px; }
+.form-page { width: min(100%, 680px); margin: auto; background: white; border: 1px solid var(--border); border-radius: 24px; padding: 28px; }
+.form-intro { color: var(--muted); line-height: 1.6; }
+.form-title { margin: 26px 0 8px; }
+.product-form { display: grid; gap: 18px; margin-top: 22px; }
+.product-form label { display: grid; gap: 7px; font-weight: 700; font-size: 14px; }
+.product-form input { width: 100%; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; outline: none; background: white; }
+.product-form input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px #5638b81c; }
+.product-form input[aria-invalid="true"] { border-color: var(--danger); background: #fff8f7; }
+.field-error { color: #9b2f2a; font-weight: 600; }
+.confirm-dialog { border: 0; padding: 0; background: transparent; }
+.confirm-dialog::backdrop { background: #1c172b99; }
+.confirm-dialog .modal { box-shadow: 0 24px 70px #20183233; }
+.product-card:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #8d78d8; outline-offset: 2px; }
+
+@media (max-width: 760px) {
+  .form-page, .detail-page { padding: 20px; border-radius: 18px; }
+  .header-actions .compact-button { min-width: 42px; }
+}
