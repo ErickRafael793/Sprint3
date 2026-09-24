@@ -1,0 +1,186 @@
+From d0a887b0f1029643e9be2b737b17a30d8b9d78f6 Mon Sep 17 00:00:00 2001
+From: Patch Builder <patch@example.com>
+Date: Thu, 24 Sep 2026 02:36:33 +0000
+Subject: [PATCH] feat(us11): implementar listado de usuarios
+
+---
+ solucionbase/src/app/dependencies.ts          |  4 +-
+ .../repository/FakeStoreUserRepository.ts     | 22 +++++++
+ .../src/presentation/view/UsersView.tsx       | 60 ++++++++++++++++---
+ .../viewmodel/useUsersViewModel.ts            | 29 +++++++--
+ 4 files changed, 100 insertions(+), 15 deletions(-)
+ create mode 100644 solucionbase/src/infrastructure/repository/FakeStoreUserRepository.ts
+
+diff --git a/solucionbase/src/app/dependencies.ts b/solucionbase/src/app/dependencies.ts
+index d9fa58f..26a29d8 100644
+--- a/solucionbase/src/app/dependencies.ts
++++ b/solucionbase/src/app/dependencies.ts
+@@ -4,9 +4,9 @@ import { HttpClient } from "@/infrastructure/http/HttpClient";
+ import { BrowserCartRepository } from "@/infrastructure/repository/BrowserCartRepository";
+ import { BrowserSessionRepository } from "@/infrastructure/repository/BrowserSessionRepository";
+ import { FakeStoreAuthRepository } from "@/infrastructure/repository/FakeStoreAuthRepository";
++import { FakeStoreUserRepository } from "@/infrastructure/repository/FakeStoreUserRepository";
+ import { MockAuditRepository } from "@/infrastructure/repository/MockAuditRepository";
+ import { MockProductRepository } from "@/infrastructure/repository/MockProductRepository";
+-import { MockUserRepository } from "@/infrastructure/repository/MockUserRepository";
+ 
+ const http = new HttpClient(APP_CONFIG.api.baseUrl);
+ const sessionRepository = new BrowserSessionRepository();
+@@ -20,7 +20,7 @@ export const dependencies = {
+     () => navigator.onLine,
+   ),
+   productRepository: new MockProductRepository(),
+-  userRepository: new MockUserRepository(),
++  userRepository: new FakeStoreUserRepository(http),
+   auditRepository: new MockAuditRepository(),
+   cartRepository,
+ };
+diff --git a/solucionbase/src/infrastructure/repository/FakeStoreUserRepository.ts b/solucionbase/src/infrastructure/repository/FakeStoreUserRepository.ts
+new file mode 100644
+index 0000000..0d57e5e
+--- /dev/null
++++ b/solucionbase/src/infrastructure/repository/FakeStoreUserRepository.ts
+@@ -0,0 +1,22 @@
++import { APP_CONFIG } from "@/core/appConfig";
++import { AppError } from "@/core/AppError";
++import type { User } from "@/domain/models";
++import type { UserRepository } from "@/domain/repository";
++import { HttpClient, HttpError } from "@/infrastructure/http/HttpClient";
++
++export class FakeStoreUserRepository implements UserRepository {
++  constructor(private readonly http: HttpClient) {}
++
++  async getAll(): Promise<User[]> {
++    try {
++      const users = await this.http.request<User[]>(APP_CONFIG.api.endpoints.users);
++      return Array.isArray(users) ? users : [];
++    } catch (error) {
++      if (error instanceof HttpError && error.status === 0) {
++        throw new AppError("NO_CONNECTION", "No fue posible conectar con el servidor.");
++      }
++
++      throw new AppError("SERVER_ERROR", "No fue posible cargar los usuarios.");
++    }
++  }
++}
+diff --git a/solucionbase/src/presentation/view/UsersView.tsx b/solucionbase/src/presentation/view/UsersView.tsx
+index 38a44c9..d81c00b 100644
+--- a/solucionbase/src/presentation/view/UsersView.tsx
++++ b/solucionbase/src/presentation/view/UsersView.tsx
+@@ -1,18 +1,60 @@
++import { AlertTriangle, Users } from "lucide-react";
+ import { useUsersViewModel } from "@/presentation/viewmodel/useUsersViewModel";
+ 
++const getInitials = (firstname: string, lastname: string, username: string) => {
++  const initials = `${firstname?.[0] ?? ""}${lastname?.[0] ?? ""}`.trim();
++  return (initials || username.slice(0, 2)).toUpperCase();
++};
++
+ export function UsersView() {
+-  const { users } = useUsersViewModel();
++  const vm = useUsersViewModel();
++
+   return (
+     <section>
+-      <div className="page-header"><div><span className="eyebrow">Administración</span><h1>Usuarios registrados</h1></div></div>
+-      <div className="user-list">
+-        {users.map((user) => (
+-          <article key={user.id}>
+-            <span className="avatar">{user.name.firstname[0]}{user.name.lastname[0]}</span>
+-            <div><strong>{user.name.firstname} {user.name.lastname}</strong><span>{user.email}</span><small>@{user.username} · {user.phone}</small></div>
+-          </article>
+-        ))}
++      <div className="page-header">
++        <div>
++          <span className="eyebrow">Administración</span>
++          <h1>Usuarios registrados</h1>
++        </div>
+       </div>
++
++      {vm.loading && (
++        <div className="loading" role="status" aria-live="polite">
++          Cargando usuarios...
++        </div>
++      )}
++
++      {!vm.loading && vm.error && (
++        <div className="empty-state" role="alert">
++          <AlertTriangle />
++          <strong>{vm.error}</strong>
++          <button className="primary-button" onClick={vm.retry}>Reintentar</button>
++        </div>
++      )}
++
++      {!vm.loading && !vm.error && vm.users.length === 0 && (
++        <div className="empty-state">
++          <Users />
++          <strong>No hay usuarios disponibles</strong>
++        </div>
++      )}
++
++      {!vm.loading && !vm.error && vm.users.length > 0 && (
++        <div className="user-list">
++          {vm.users.map((user) => (
++            <article key={user.id}>
++              <span className="avatar">
++                {getInitials(user.name.firstname, user.name.lastname, user.username)}
++              </span>
++              <div>
++                <strong>{user.name.firstname} {user.name.lastname}</strong>
++                <span>{user.email}</span>
++                <small>@{user.username}{user.phone ? ` · ${user.phone}` : ""}</small>
++              </div>
++            </article>
++          ))}
++        </div>
++      )}
+     </section>
+   );
+ }
+diff --git a/solucionbase/src/presentation/viewmodel/useUsersViewModel.ts b/solucionbase/src/presentation/viewmodel/useUsersViewModel.ts
+index c1d7a94..795f748 100644
+--- a/solucionbase/src/presentation/viewmodel/useUsersViewModel.ts
++++ b/solucionbase/src/presentation/viewmodel/useUsersViewModel.ts
+@@ -1,14 +1,35 @@
+-import { useEffect, useState } from "react";
++import { useCallback, useEffect, useState } from "react";
+ import { useDependencies } from "@/app/DependenciesProvider";
++import { AppError } from "@/core/AppError";
+ import type { User } from "@/domain/models";
+ 
+ export function useUsersViewModel() {
+   const { userRepository } = useDependencies();
+   const [users, setUsers] = useState<User[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
+ 
+-  useEffect(() => {
+-    userRepository.getAll().then(setUsers);
++  const load = useCallback(async () => {
++    setLoading(true);
++    setError("");
++
++    try {
++      setUsers(await userRepository.getAll());
++    } catch (caughtError) {
++      setUsers([]);
++      setError(
++        caughtError instanceof AppError
++          ? caughtError.message
++          : "No fue posible cargar los usuarios.",
++      );
++    } finally {
++      setLoading(false);
++    }
+   }, [userRepository]);
+ 
+-  return { users };
++  useEffect(() => {
++    void load();
++  }, [load]);
++
++  return { users, loading, error, retry: load };
+ }
+-- 
+2.47.3
+
