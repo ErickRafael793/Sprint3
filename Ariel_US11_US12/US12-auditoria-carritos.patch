@@ -1,0 +1,225 @@
+From 116823e385610f71b18ba67bf3347215031e30eb Mon Sep 17 00:00:00 2001
+From: Patch Builder <patch@example.com>
+Date: Thu, 24 Sep 2026 02:36:33 +0000
+Subject: [PATCH] feat(us12): implementar auditoria de carritos
+
+---
+ solucionbase/src/app/dependencies.ts          |  4 +-
+ .../src/domain/models/audit.models.ts         |  1 +
+ .../repository/FakeStoreAuditRepository.ts    | 40 +++++++++++
+ .../src/presentation/view/AuditView.tsx       | 68 ++++++++++++++++---
+ .../viewmodel/useAuditViewModel.ts            | 29 ++++++--
+ 5 files changed, 127 insertions(+), 15 deletions(-)
+ create mode 100644 solucionbase/src/infrastructure/repository/FakeStoreAuditRepository.ts
+
+diff --git a/solucionbase/src/app/dependencies.ts b/solucionbase/src/app/dependencies.ts
+index 26a29d8..80dff07 100644
+--- a/solucionbase/src/app/dependencies.ts
++++ b/solucionbase/src/app/dependencies.ts
+@@ -3,9 +3,9 @@ import { APP_CONFIG } from "@/core/appConfig";
+ import { HttpClient } from "@/infrastructure/http/HttpClient";
+ import { BrowserCartRepository } from "@/infrastructure/repository/BrowserCartRepository";
+ import { BrowserSessionRepository } from "@/infrastructure/repository/BrowserSessionRepository";
++import { FakeStoreAuditRepository } from "@/infrastructure/repository/FakeStoreAuditRepository";
+ import { FakeStoreAuthRepository } from "@/infrastructure/repository/FakeStoreAuthRepository";
+ import { FakeStoreUserRepository } from "@/infrastructure/repository/FakeStoreUserRepository";
+-import { MockAuditRepository } from "@/infrastructure/repository/MockAuditRepository";
+ import { MockProductRepository } from "@/infrastructure/repository/MockProductRepository";
+ 
+ const http = new HttpClient(APP_CONFIG.api.baseUrl);
+@@ -21,7 +21,7 @@ export const dependencies = {
+   ),
+   productRepository: new MockProductRepository(),
+   userRepository: new FakeStoreUserRepository(http),
+-  auditRepository: new MockAuditRepository(),
++  auditRepository: new FakeStoreAuditRepository(http),
+   cartRepository,
+ };
+ 
+diff --git a/solucionbase/src/domain/models/audit.models.ts b/solucionbase/src/domain/models/audit.models.ts
+index 5921a88..4b3ab63 100644
+--- a/solucionbase/src/domain/models/audit.models.ts
++++ b/solucionbase/src/domain/models/audit.models.ts
+@@ -1,6 +1,7 @@
+ export interface AuditProduct {
+   productId: number;
+   quantity: number;
++  title?: string;
+ }
+ 
+ export interface AuditCart {
+diff --git a/solucionbase/src/infrastructure/repository/FakeStoreAuditRepository.ts b/solucionbase/src/infrastructure/repository/FakeStoreAuditRepository.ts
+new file mode 100644
+index 0000000..ee38281
+--- /dev/null
++++ b/solucionbase/src/infrastructure/repository/FakeStoreAuditRepository.ts
+@@ -0,0 +1,40 @@
++import { AppError } from "@/core/AppError";
++import type { AuditCart, Product } from "@/domain/models";
++import type { AuditRepository } from "@/domain/repository";
++import { HttpClient, HttpError } from "@/infrastructure/http/HttpClient";
++
++const CARTS_ENDPOINT = "/carts";
++const PRODUCTS_ENDPOINT = "/products";
++
++export class FakeStoreAuditRepository implements AuditRepository {
++  constructor(private readonly http: HttpClient) {}
++
++  async getAllCarts(): Promise<AuditCart[]> {
++    let carts: AuditCart[];
++
++    try {
++      carts = await this.http.request<AuditCart[]>(CARTS_ENDPOINT);
++    } catch (error) {
++      if (error instanceof HttpError && error.status === 0) {
++        throw new AppError("NO_CONNECTION", "No fue posible conectar con el servidor.");
++      }
++
++      throw new AppError("SERVER_ERROR", "No fue posible cargar el histórico de carritos.");
++    }
++
++    try {
++      const products = await this.http.request<Product[]>(PRODUCTS_ENDPOINT);
++      const titles = new Map(products.map((product) => [product.id, product.title]));
++
++      return carts.map((cart) => ({
++        ...cart,
++        products: cart.products.map((product) => ({
++          ...product,
++          title: titles.get(product.productId),
++        })),
++      }));
++    } catch {
++      return carts;
++    }
++  }
++}
+diff --git a/solucionbase/src/presentation/view/AuditView.tsx b/solucionbase/src/presentation/view/AuditView.tsx
+index 6e1409c..b1bd421 100644
+--- a/solucionbase/src/presentation/view/AuditView.tsx
++++ b/solucionbase/src/presentation/view/AuditView.tsx
+@@ -1,18 +1,68 @@
++import { AlertTriangle, ClipboardList } from "lucide-react";
+ import { useAuditViewModel } from "@/presentation/viewmodel/useAuditViewModel";
+ 
++const formatDate = (value: string) => {
++  const date = new Date(value);
++  return Number.isNaN(date.getTime())
++    ? value
++    : new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(date);
++};
++
+ export function AuditView() {
+-  const { carts } = useAuditViewModel();
++  const vm = useAuditViewModel();
++
+   return (
+     <section>
+-      <div className="page-header"><div><span className="eyebrow">Solo lectura</span><h1>Carritos de auditoría</h1></div></div>
+-      <div className="audit-list">
+-        {carts.map((cart) => (
+-          <details key={cart.id}>
+-            <summary><span className="avatar">{cart.id}</span><div><strong>Carrito #{cart.id}</strong><small>Usuario #{cart.userId} · {cart.date}</small></div></summary>
+-            <div className="audit-products">{cart.products.map((product) => <span key={product.productId}>Producto #{product.productId} × {product.quantity}</span>)}</div>
+-          </details>
+-        ))}
++      <div className="page-header">
++        <div>
++          <span className="eyebrow">Solo lectura</span>
++          <h1>Carritos de auditoría</h1>
++        </div>
+       </div>
++
++      {vm.loading && (
++        <div className="loading" role="status" aria-live="polite">
++          Cargando histórico de carritos...
++        </div>
++      )}
++
++      {!vm.loading && vm.error && (
++        <div className="empty-state" role="alert">
++          <AlertTriangle />
++          <strong>{vm.error}</strong>
++          <button className="primary-button" onClick={vm.retry}>Reintentar</button>
++        </div>
++      )}
++
++      {!vm.loading && !vm.error && vm.carts.length === 0 && (
++        <div className="empty-state">
++          <ClipboardList />
++          <strong>No hay carritos para auditar</strong>
++        </div>
++      )}
++
++      {!vm.loading && !vm.error && vm.carts.length > 0 && (
++        <div className="audit-list">
++          {vm.carts.map((cart) => (
++            <details key={cart.id}>
++              <summary>
++                <span className="avatar">{cart.id}</span>
++                <div>
++                  <strong>Carrito #{cart.id}</strong>
++                  <small>Usuario #{cart.userId} · {formatDate(cart.date)}</small>
++                </div>
++              </summary>
++              <div className="audit-products">
++                {cart.products.map((product) => (
++                  <span key={product.productId}>
++                    {product.title ?? `Producto #${product.productId}`} × {product.quantity}
++                  </span>
++                ))}
++              </div>
++            </details>
++          ))}
++        </div>
++      )}
+     </section>
+   );
+ }
+diff --git a/solucionbase/src/presentation/viewmodel/useAuditViewModel.ts b/solucionbase/src/presentation/viewmodel/useAuditViewModel.ts
+index 1b8e42c..e5d5c1f 100644
+--- a/solucionbase/src/presentation/viewmodel/useAuditViewModel.ts
++++ b/solucionbase/src/presentation/viewmodel/useAuditViewModel.ts
+@@ -1,14 +1,35 @@
+-import { useEffect, useState } from "react";
++import { useCallback, useEffect, useState } from "react";
+ import { useDependencies } from "@/app/DependenciesProvider";
++import { AppError } from "@/core/AppError";
+ import type { AuditCart } from "@/domain/models";
+ 
+ export function useAuditViewModel() {
+   const { auditRepository } = useDependencies();
+   const [carts, setCarts] = useState<AuditCart[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
+ 
+-  useEffect(() => {
+-    auditRepository.getAllCarts().then(setCarts);
++  const load = useCallback(async () => {
++    setLoading(true);
++    setError("");
++
++    try {
++      setCarts(await auditRepository.getAllCarts());
++    } catch (caughtError) {
++      setCarts([]);
++      setError(
++        caughtError instanceof AppError
++          ? caughtError.message
++          : "No fue posible cargar el histórico de carritos.",
++      );
++    } finally {
++      setLoading(false);
++    }
+   }, [auditRepository]);
+ 
+-  return { carts };
++  useEffect(() => {
++    void load();
++  }, [load]);
++
++  return { carts, loading, error, retry: load };
+ }
+-- 
+2.47.3
+
