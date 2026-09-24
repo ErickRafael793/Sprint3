@@ -6,6 +6,7 @@ export const APP_CONFIG = {
       login: "/auth/login",
       users: "/users",
       products: "/products",
+      carts: "/carts",
     },
   },
   routes: {

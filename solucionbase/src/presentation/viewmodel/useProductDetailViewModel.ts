@@ -14,6 +14,7 @@ export function useProductDetailViewModel() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -49,10 +50,16 @@ export function useProductDetailViewModel() {
     };
   }, [productId, productRepository]);
 
-  const addToCart = () => {
+  const addToCart = async () => {
     if (!product) return;
-    cartRepository.add(product, quantity);
-    setMessage("Producto agregado al carrito.");
+    setIsSaving(true);
+    setMessage("");
+    try {
+      await cartRepository.add(product, quantity);
+      setMessage("Producto agregado al carrito.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return {
@@ -65,6 +72,7 @@ export function useProductDetailViewModel() {
     isAdmin: session?.role === "ADMIN",
     isClient: session?.role === "CLIENT",
     isAuditor: session?.role === "AUDITOR",
+    isSaving,
     decrease: () => setQuantity((current) => Math.max(1, current - 1)),
     increase: () => setQuantity((current) => current + 1),
     addToCart,

@@ -60,9 +60,14 @@ export function ProductDetailView() {
                 <strong>{vm.quantity}</strong>
                 <button aria-label="Aumentar cantidad" onClick={vm.increase}><Plus /></button>
               </div>
-              <button className="primary-button" onClick={vm.addToCart}>
-                <ShoppingCart /> Agregar al carrito
-              </button>
+              <button
+                     className="primary-button"
+                     disabled={vm.isSaving}
+                     onClick={vm.addToCart}
+              >
+                  <ShoppingCart />
+                   {vm.isSaving ? "Agregando..." : "Agregar al carrito"}
+               </button>
               {vm.message && <div className="notice success" role="status">{vm.message}</div>}
             </>
           )}
