@@ -6,6 +6,7 @@ import { RoleRoute } from "@/presentation/components/RoleRoute";
 import { AuditView } from "@/presentation/view/AuditView";
 import { CartView } from "@/presentation/view/CartView";
 import { CatalogView } from "@/presentation/view/CatalogView";
+import { CreateProductView } from "@/presentation/view/CreateProductView";
 import { LoginView } from "@/presentation/view/LoginView";
 import { ProductDetailView } from "@/presentation/view/ProductDetailView";
 import { ProfileView } from "@/presentation/view/ProfileView";
@@ -20,6 +21,9 @@ export function AppRouter() {
         <Route element={<AppLayout />}>
           <Route path={APP_CONFIG.routes.catalog} element={<CatalogView />} />
           <Route path="/products/:id" element={<ProductDetailView />} />
+          <Route element={<RoleRoute allowed={["ADMIN"]} />}>
+            <Route path={APP_CONFIG.routes.newProduct} element={<CreateProductView />} />
+          </Route>
           <Route path={APP_CONFIG.routes.profile} element={<ProfileView />} />
 
           <Route element={<RoleRoute allowed={["CLIENT"]} />}>
