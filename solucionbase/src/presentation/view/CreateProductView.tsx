@@ -27,7 +27,7 @@ export function CreateProductView() {
         errors={vm.errors}
         loading={vm.loading}
         submitLabel="Guardar producto"
-        onChange={(field, value) => vm.updateField(field as any, value)}
+        onChange={vm.updateField}
         onSubmit={vm.submit}
         onCancel={vm.cancel}
       />

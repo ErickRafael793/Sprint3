@@ -1,23 +1,25 @@
 import type { FormEvent } from "react";
-import type { ProductInput } from "@/domain/models";
+import type {
+  ProductFormErrors,
+  ProductFormValue,
+} from "@/presentation/viewmodel/validateProductForm";
 
 interface ProductFormProps {
-  value: ProductInput;
-  errors: Partial<Record<keyof ProductInput, string>>;
+  value: ProductFormValue;
+  errors: ProductFormErrors;
   loading: boolean;
   submitLabel: string;
-  onChange: (field: keyof ProductInput, value: string) => void;
+  onChange: (field: keyof ProductFormValue, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
 }
 
-const fields: Array<{ key: keyof ProductInput; label: string; type: "text" | "number" | "url"; placeholder: string }> = [
-  { key: "title", label: "Título", type: "text", placeholder: "Nombre del producto" },
-  { key: "price", label: "Precio", type: "number", placeholder: "0.00" },
-  { key: "description", label: "Descripción", type: "text", placeholder: "Descripción del producto" },
-  { key: "category", label: "Categoría", type: "text", placeholder: "Categoría" },
-  { key: "image", label: "URL de imagen", type: "url", placeholder: "https://..." },
-];
+const fields: Array<{
+  key: keyof ProductFormValue;
+  label: string;
+  type: "text" | "number" | "url";
+  placeholder: string;
+}> = [
 
 export function ProductForm({
   value,

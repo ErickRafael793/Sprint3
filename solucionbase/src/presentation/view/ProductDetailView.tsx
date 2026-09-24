@@ -38,7 +38,7 @@ export function ProductDetailView() {
             errors={editVm.errors}
             loading={editVm.loading}
             submitLabel="Guardar cambios"
-            onChange={(field, value) => editVm.updateField(field as any, value)}
+            onChange={editVm.updateField}
             onSubmit={editVm.submit}
             onCancel={() => setEditing(false)}
           />
