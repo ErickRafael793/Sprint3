@@ -10,7 +10,7 @@ import { MockUserRepository } from "@/infrastructure/repository/MockUserReposito
 
 const http = new HttpClient(APP_CONFIG.api.baseUrl);
 const sessionRepository = new BrowserSessionRepository();
-const cartRepository = new BrowserCartRepository();
+const cartRepository = new BrowserCartRepository(http);
 
 export const dependencies = {
   authService: new AuthService(
