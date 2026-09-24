@@ -5,8 +5,8 @@ import { BrowserCartRepository } from "@/infrastructure/repository/BrowserCartRe
 import { BrowserSessionRepository } from "@/infrastructure/repository/BrowserSessionRepository";
 import { FakeStoreAuditRepository } from "@/infrastructure/repository/FakeStoreAuditRepository";
 import { FakeStoreAuthRepository } from "@/infrastructure/repository/FakeStoreAuthRepository";
+import { FakeStoreProductRepository } from "@/infrastructure/repository/FakeStoreProductRepository";
 import { FakeStoreUserRepository } from "@/infrastructure/repository/FakeStoreUserRepository";
-import { MockProductRepository } from "@/infrastructure/repository/MockProductRepository";
 
 const http = new HttpClient(APP_CONFIG.api.baseUrl);
 const sessionRepository = new BrowserSessionRepository();
@@ -19,7 +19,7 @@ export const dependencies = {
     cartRepository,
     () => navigator.onLine,
   ),
-  productRepository: new MockProductRepository(),
+  productRepository: new FakeStoreProductRepository(http),
   userRepository: new FakeStoreUserRepository(http),
   auditRepository: new FakeStoreAuditRepository(http),
   cartRepository,
