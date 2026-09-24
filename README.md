@@ -9,3 +9,6 @@ Aquí se almacenará el código, la documentación y los cambios del proyecto.
 ## Estado
 
 Repositorio en preparación para comenzar el desarrollo.
+
+## Colaboradores 
+Aaron Trejo Hernandez
